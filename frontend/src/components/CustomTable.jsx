@@ -9,6 +9,8 @@ import TablePagination from '@material-ui/core/TablePagination';
 import TableRow from '@material-ui/core/TableRow';
 import TableSortLabel from '@material-ui/core/TableSortLabel';
 import Paper from '@material-ui/core/Paper';
+import TextField from '@material-ui/core/TextField';
+
 
 import axios from 'axios';
 
@@ -19,7 +21,7 @@ const headCells = [
   { id: 'description', numeric: false, disablePadding: false, label: 'Desription' },
 ];
 
-function EnhancedTableHead(props) {
+const EnhancedTableHead = (props) => {
     const { classes, order, orderBy, onRequestSort } = props;
     const createSortHandler = property => event => {
         onRequestSort(event, property);
@@ -64,26 +66,6 @@ EnhancedTableHead.propTypes = {
   rowCount: PropTypes.number.isRequired,
 };
 
-const useToolbarStyles = makeStyles(theme => ({
-    root: {
-        paddingLeft: theme.spacing(2),
-        paddingRight: theme.spacing(1),
-    },
-    highlight:
-        theme.palette.type === 'light'
-        ? {
-            color: theme.palette.secondary.main,
-            backgroundColor: lighten(theme.palette.secondary.light, 0.85),
-            }
-        : {
-            color: theme.palette.text.primary,
-            backgroundColor: theme.palette.secondary.dark,
-            },
-    title: {
-        flex: '1 1 100%',
-    },
-}));
-
 const useStyles = makeStyles(theme => ({
     root: {
         width: '100%',
@@ -110,6 +92,9 @@ const useStyles = makeStyles(theme => ({
         top: 20,
         width: 1,
     },
+    textField: {
+        width: '100%',
+    },
 }));
 
 export default function CustomTableWrapper() {
@@ -119,12 +104,24 @@ export default function CustomTableWrapper() {
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(5);
     const [rows, setRows] = React.useState([]);
+    const [rowsBackup, setRowsBackup] = React.useState([]);
     const [rowsToDisplay, setRowsToDisplay] = React.useState([]);
+    const [searchTerm, setSearchTerm] = React.useState('');
 
     const handleRequestSort = (event, property) => {
         const isDesc =  orderBy === property && order === 'desc';
         setOrder(isDesc ? 'asc' : 'desc');
         setOrderBy(property);
+        
+        let newData = rows.slice();
+        if (isDesc === "asc") {
+            newData.sort((a, b) => (a[property] < b[property]) ? 1 : -1)
+        } else {
+            newData.sort((a, b) => (a[property] > b[property]) ? 1 : -1)
+        }
+        setRows(newData);
+        setPage(0);
+        setRowsToDisplay(newData.slice(0, rowsPerPage));
     };
 
     const handleChangePage = (event, newPage) => {
@@ -144,20 +141,45 @@ export default function CustomTableWrapper() {
         setRowsToDisplay(rows.slice(0, parseInt(event.target.value, 10)));
     };
 
+    const handleSearchTerm = (event) => {
+        let newData = rowsBackup.slice()
+        if (newData.length > 0) {
+            if (event.target.value !== "") {
+                let keys = Object.keys(newData[0]);
+                newData = newData.filter(x => {
+                    if (x.Name.includes(event.target.value)) {
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }
+        setSearchTerm(event.target.value);
+        setRows(newData);
+        setPage(0);
+        setRowsToDisplay(newData.slice(0, rowsPerPage));
+    };
+
     React.useEffect(() => {
         axios.get("http://127.0.0.1:8000/get_data")
             .then(response => {
                 setRows(response.data);
+                setRowsBackup(response.data);
                 setRowsToDisplay(response.data.slice(0, rowsPerPage));
             })
             .catch(err => {
                 console.error(err)
             })
     }, []);
-
+    
     return (
         <div className={classes.root}>
             <Paper className={classes.paper}>
+                <TextField
+                    value={searchTerm}
+                    onChange={handleSearchTerm}
+                    class={classes.textField}
+                />
                 <div className={classes.tableWrapper}>
                     <Table
                         className={classes.table}
@@ -175,7 +197,7 @@ export default function CustomTableWrapper() {
                         {rowsToDisplay.map((row, index) => {
                             return (
                                 <TableRow
-                                    key={row.name}
+                                    key={index}
                                 >
                                     <TableCell component="th" scope="row" padding="none">
                                         {row.Name}
