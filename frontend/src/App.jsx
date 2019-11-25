@@ -1,6 +1,7 @@
 import React from 'react';
 
 import TableWrapper from './components/TableWrapper';
+import CustomTableWrapper from './components/CustomTable';
 
 const App = () => {
     return (
@@ -8,7 +9,7 @@ const App = () => {
             <center>
                 <h1>Table Demo</h1>
             </center>
-            <TableWrapper />
+            <CustomTableWrapper />
         </div>
     );
 };

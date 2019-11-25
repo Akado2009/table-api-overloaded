@@ -17,7 +17,16 @@ const (
 	desriptionSize = 25
 )
 
+var allowedHeaders = "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	(*w).Header().Set("Access-Control-Expose-Headers", "Authorization")
+}
 
 func randomString(n int) string {
 	b := make([]rune, n)
@@ -39,13 +48,14 @@ type Row struct {
 }
 
 func getDataHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	data := make([]Row, size, size)
 	for i := 0; i < size; i++ {
-		data = append(data, Row{
+		data[i] = Row{
 			Name:        randomString(nameSize),
 			ID:          randomInt(maxInt),
 			Description: randomString(desriptionSize),
-		})
+		}
 	}
 	js, err := json.Marshal(data)
 	if err != nil {
